@@ -22,9 +22,10 @@ import java.util.Stack;
 
 public class Main extends Application {
     Rectangle selectedpiece;
-    VBox selectedbox;
+    VBox panel1, panel2, panel3;
     Paint temp;
     private Stack<Rectangle> undoStack;
+    private Stack<VBox> moveStack;
     private static final int NUM_RECTANGLE = 7;
     private final Color []rectColors = {Color.rgb(251,235,251), Color.rgb(242,195,243), Color.rgb(231,143,233), Color.rgb(219,88,222),
             Color.rgb(173,34,176), Color.rgb(124,24,126), Color.rgb(82,16,84), Color.rgb(57,12,58)};
@@ -46,7 +47,8 @@ public class Main extends Application {
 
     private Parent InitializeContent(){
         GridPane root =  new GridPane();
-        undoStack = new Stack<>();
+        undoStack = new Stack<Rectangle>();
+        moveStack = new Stack<VBox>();
         Button btnUndo = new Button("Undo");
         btnUndo.setOnAction(actionEvent -> undo());
         root.add(btnUndo,1,1);
@@ -58,6 +60,7 @@ public class Main extends Application {
         panel1.setPrefWidth(500);
         panel1.setSpacing(1);
         panel1.setPadding(new Insets(0, 20, 10, 20));
+        panel1.setId("panel1");
         DragAndDropHandler(panel1);
 
         VBox panel2 = new VBox();
@@ -67,6 +70,7 @@ public class Main extends Application {
         panel2.setPrefWidth(500);
         panel2.setSpacing(1);
         panel2.setPadding(new Insets(0, 20, 10, 20));
+        panel2.setId("panel2");
         DragAndDropHandler(panel2);
 
         VBox panel3 = new VBox();
@@ -76,6 +80,7 @@ public class Main extends Application {
         panel3.setPrefWidth(500);
         panel3.setSpacing(1);
         panel3.setPadding(new Insets(0, 20, 10, 20));
+        panel3.setId("panel3");
         DragAndDropHandler(panel3);
 
 
@@ -105,9 +110,12 @@ public class Main extends Application {
     }
 
     private void undo() {
-        if(! undoStack.isEmpty()){
+        if(!undoStack.isEmpty()){
             Node node = undoStack.pop();
-            selectedbox.getChildren().remove(node);
+            VBox StartTower = moveStack.pop();
+            ((VBox)StartTower).getChildren().remove(0);
+            VBox DestTower = moveStack.pop();
+            ((VBox)DestTower).getChildren().add(0,node);
         }
         else {
             Alert alert = new Alert(Alert.AlertType.WARNING, "No moves to undo.");
@@ -115,6 +123,14 @@ public class Main extends Application {
         }
     }
 
+    private VBox returnTowerFromID(String id){
+
+        VBox Tower = (id == "panel1")? panel1: (id == "panel2")? panel2: (id == "panel3")? panel3:null;
+
+        return Tower;
+
+
+    }
 
     public void DragAndDropHandler(Node tower) {
         tower.setOnDragDetected(new EventHandler<MouseEvent>() {
@@ -164,6 +180,9 @@ public class Main extends Application {
                     Rectangle disc = new Rectangle(Double.parseDouble(db.getString()), 50);
                     disc.setFill(Color.valueOf(db.getHtml()));
                     disc.setStroke(Color.BLACK);
+                    moveStack.push((VBox) dragEvent.getGestureSource());
+                    moveStack.push((VBox)tower);
+                    undoStack.push(disc);
                     ((VBox)tower).getChildren().add(0,disc);
                     success = true;
                 }
@@ -178,7 +197,7 @@ public class Main extends Application {
                 }
                 dragEvent.consume();
             }});
+
+
     }
-
-
 }
