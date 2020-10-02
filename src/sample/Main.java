@@ -1,15 +1,15 @@
 package sample;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -20,12 +20,16 @@ import javafx.stage.Stage;
 import java.util.Stack;
 
 public class Main extends Application {
-    Rectangle selectedpiece;
     VBox source, destination, auxiliary;
-    Paint temp;
-    private Stack<Rectangle> undoStack;
-    private Stack<VBox> moveStack;
-    private static final int NUM_RECTANGLE = 7;
+    TextField NUM_MOVES_DESC;
+    private Stack<Rectangle> undoRectStack, redoRectStack;
+    private Stack<VBox> undoMoveStack, redoMoveStack;
+    private ComboBox<String> DiscsNumChanger;
+    private int NUM_RECTANGLE = 7;
+    private int NUM_MOVES = 0;
+
+
+
     private final Color []rectColors = {Color.rgb(251,235,251), Color.rgb(242,195,243), Color.rgb(231,143,233), Color.rgb(219,88,222),
             Color.rgb(173,34,176), Color.rgb(124,24,126), Color.rgb(82,16,84), Color.rgb(57,12,58)};
     private GridPane root;
@@ -39,25 +43,47 @@ public class Main extends Application {
         InitializeGame(mainStage);
     }
     public void InitializeGameContent(){
-        undoStack = new Stack<Rectangle>();
-        moveStack = new Stack<VBox>();
+        undoRectStack = new Stack<Rectangle>();
+        undoMoveStack = new Stack<VBox>();
         Button btnUndo = new Button("Undo");
         btnUndo.setOnAction(actionEvent -> undo());
-        root.add(btnUndo,1,1);
+        //root.add(btnUndo,1,1);
+
+        redoRectStack = new Stack<Rectangle>();
+        redoMoveStack = new Stack<VBox>();
+        Button btnRedo = new Button("Redo");
+        btnRedo.setOnAction(actionEvent -> redo());
+        //root.add(btnRedo,1,2);
+
 
         Button Solve = new Button("Solve");
         Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source,auxiliary,destination));
-        root.add(Solve,2,1);
+        //root.add(Solve,2,2);
 
         Button restart = new Button("Restart");
         restart.setOnAction(actionEvent -> restart());
-        root.add(restart,3,1);
+        //root.add(restart,3,2);
 
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
-        comboBox.setValue("5");
+
+        HBox box = new HBox(5);
+        box.getChildren().addAll(btnUndo, btnRedo,Solve,restart);
+
+        NUM_MOVES_DESC = new TextField();
+        NUM_MOVES_DESC.setText("Move No.: " + NUM_MOVES);
+        NUM_MOVES_DESC.setEditable(false);
+
+        HBox box2 = new HBox(5);
+        box2.getChildren().addAll(NUM_MOVES_DESC);
+        root.add(box, 1, 2);
+        root.add(box2, 1, 3);
+
+        DiscsNumChanger = new ComboBox<String>();
+        DiscsNumChanger.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
+        DiscsNumChanger.setValue("5");
         //comboBox.setEditable(true);
-        root.add(comboBox, 4, 1);
+        root.add(DiscsNumChanger, 4, 3);
+        UpdateNumberOfDiscs();
+
     }
 
     private void restart(){
@@ -127,20 +153,50 @@ public class Main extends Application {
 
 
 
-
     private void undo() {
-        if(!undoStack.isEmpty()){
-            Node node = undoStack.pop();
-            VBox StartTower = moveStack.pop();
+        if(!undoRectStack.isEmpty()){
+            Node node = undoRectStack.pop();
+            redoRectStack.push((Rectangle) node);
+
+            VBox StartTower = undoMoveStack.pop();
+            VBox DestTower = undoMoveStack.pop();
+
+            redoMoveStack.push((VBox)DestTower);
+            redoMoveStack.push((VBox)StartTower);
             ((VBox)StartTower).getChildren().remove(0);
-            VBox DestTower = moveStack.pop();
             ((VBox)DestTower).getChildren().add(0,node);
+            NUM_MOVES--;
+            UpdateNumberOfMoves();
         }
         else {
             Alert alert = new Alert(Alert.AlertType.WARNING, "No moves to undo.");
             alert.showAndWait();
         }
     }
+
+    private void redo() {
+        if(!redoMoveStack.isEmpty()){
+            Node node = redoRectStack.pop();
+            undoRectStack.push((Rectangle) node);
+
+            VBox redoDestTower = redoMoveStack.pop();
+            VBox redoStartTower = redoMoveStack.pop();
+            undoMoveStack.push((VBox)redoStartTower);
+            undoMoveStack.push((VBox)redoDestTower);
+
+            ((VBox)redoStartTower).getChildren().remove(0);
+            ((VBox)redoDestTower).getChildren().add(0,node);
+            NUM_MOVES++;
+            UpdateNumberOfMoves();
+
+        }
+        else {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "No moves to redo.");
+            alert.showAndWait();
+        }
+    }
+
+
 
     public void solver(int discs, VBox Source, VBox Auxiliary, VBox Destination){
         if (discs == 1){
@@ -153,6 +209,27 @@ public class Main extends Application {
             Destination.getChildren().add(0,node);
             solver(discs - 1, Auxiliary, Source, Destination);
         }
+    }
+
+
+    //https://stackoverflow.com/questions/44413649/javafx-how-to-update-text-of-dynimically-created-textfields-inside-gridpane
+    public void UpdateNumberOfMoves(){
+        NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES);
+    }
+
+    //https://stackoverflow.com/questions/40838376/javafx-combobox-valueproperty-addlistenernew-changelistenerstring-progres
+    private void UpdateNumberOfDiscs(){
+        DiscsNumChanger.valueProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable,
+                                String oldValue, String newValue) {
+                if (!newValue.isEmpty()){
+                    int chosen;
+                    NUM_RECTANGLE = Integer.parseInt(newValue);
+                    restart();
+                }
+            }
+        });
     }
 
     public void DragAndDropHandler(Node tower) {
@@ -203,9 +280,11 @@ public class Main extends Application {
                     Rectangle disc = new Rectangle(Double.parseDouble(db.getString()), 50);
                     disc.setFill(Color.valueOf(db.getHtml()));
                     disc.setStroke(Color.BLACK);
-                    moveStack.push((VBox) dragEvent.getGestureSource());
-                    moveStack.push((VBox)tower);
-                    undoStack.push(disc);
+                    undoMoveStack.push((VBox) dragEvent.getGestureSource());
+                    undoMoveStack.push((VBox)tower);
+                    undoRectStack.push(disc);
+                    NUM_MOVES++;
+                    UpdateNumberOfMoves();
                     ((VBox)tower).getChildren().add(0,disc);
                     success = true;
                 }
