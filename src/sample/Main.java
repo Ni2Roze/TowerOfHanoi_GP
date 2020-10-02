@@ -6,7 +6,6 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -22,13 +21,14 @@ import java.util.Stack;
 
 public class Main extends Application {
     Rectangle selectedpiece;
-    VBox panel1, panel2, panel3;
+    VBox source, destination, auxiliary;
     Paint temp;
     private Stack<Rectangle> undoStack;
     private Stack<VBox> moveStack;
     private static final int NUM_RECTANGLE = 7;
     private final Color []rectColors = {Color.rgb(251,235,251), Color.rgb(242,195,243), Color.rgb(231,143,233), Color.rgb(219,88,222),
             Color.rgb(173,34,176), Color.rgb(124,24,126), Color.rgb(82,16,84), Color.rgb(57,12,58)};
+    private GridPane root;
 
     public static void main(String[] args) {
         launch();
@@ -36,78 +36,97 @@ public class Main extends Application {
 
     @Override
     public void start(Stage mainStage) throws Exception {
-
-
-        mainStage = new Stage();
-
-        mainStage.setScene(new Scene(InitializeContent()));
-        mainStage.setTitle("Tower of Hanoi");
-        mainStage.show();
+        InitializeGame(mainStage);
     }
-
-    private Parent InitializeContent(){
-        GridPane root =  new GridPane();
+    public void InitializeGameContent(){
         undoStack = new Stack<Rectangle>();
         moveStack = new Stack<VBox>();
         Button btnUndo = new Button("Undo");
         btnUndo.setOnAction(actionEvent -> undo());
         root.add(btnUndo,1,1);
 
-        VBox panel1 = new VBox();
-        panel1.setBackground(new Background(new BackgroundFill(Color.LIGHTGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
-        panel1.setAlignment(Pos.BOTTOM_CENTER);
-        panel1.setPrefHeight(980);
-        panel1.setPrefWidth(500);
-        panel1.setSpacing(1);
-        panel1.setPadding(new Insets(0, 20, 10, 20));
-        panel1.setId("panel1");
-        DragAndDropHandler(panel1);
+        Button Solve = new Button("Solve");
+        Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source,auxiliary,destination));
+        root.add(Solve,2,1);
 
-        VBox panel2 = new VBox();
-        panel2.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-        panel2.setAlignment(Pos.BOTTOM_CENTER);
-        panel2.setPrefHeight(500);
-        panel2.setPrefWidth(500);
-        panel2.setSpacing(1);
-        panel2.setPadding(new Insets(0, 20, 10, 20));
-        panel2.setId("panel2");
-        DragAndDropHandler(panel2);
+        Button restart = new Button("Restart");
+        restart.setOnAction(actionEvent -> restart());
+        root.add(restart,3,1);
 
-        VBox panel3 = new VBox();
-        panel3.setBackground(new Background(new BackgroundFill(Color.LIGHTSALMON, CornerRadii.EMPTY, Insets.EMPTY)));
-        panel3.setAlignment(Pos.BOTTOM_CENTER);
-        panel3.setPrefHeight(500);
-        panel3.setPrefWidth(500);
-        panel3.setSpacing(1);
-        panel3.setPadding(new Insets(0, 20, 10, 20));
-        panel3.setId("panel3");
-        DragAndDropHandler(panel3);
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
+        comboBox.setValue("5");
+        //comboBox.setEditable(true);
+        root.add(comboBox, 4, 1);
+    }
 
+    private void restart(){
+        source.getChildren().clear();
+        destination.getChildren().clear();
+        auxiliary.getChildren().clear();
 
+        InitializeTowers();
+    }
+
+    private void InitializeTowers(){
+        source = new VBox();
+        source.setBackground(new Background(new BackgroundFill(Color.LIGHTGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+        source.setAlignment(Pos.BOTTOM_CENTER);
+        source.setPrefHeight(980);
+        source.setPrefWidth(500);
+        source.setSpacing(1);
+        source.setPadding(new Insets(0, 20, 10, 20));
+        DragAndDropHandler(source);
+
+        destination = new VBox();
+        destination.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        destination.setAlignment(Pos.BOTTOM_CENTER);
+        destination.setPrefHeight(500);
+        destination.setPrefWidth(500);
+        destination.setSpacing(1);
+        destination.setPadding(new Insets(0, 20, 10, 20));
+        DragAndDropHandler(destination);
+
+        auxiliary = new VBox();
+        auxiliary.setBackground(new Background(new BackgroundFill(Color.LIGHTSALMON, CornerRadii.EMPTY, Insets.EMPTY)));
+        auxiliary.setAlignment(Pos.BOTTOM_CENTER);
+        auxiliary.setPrefHeight(500);
+        auxiliary.setPrefWidth(500);
+        auxiliary.setSpacing(1);
+        auxiliary.setPadding(new Insets(0, 20, 10, 20));
+        DragAndDropHandler(auxiliary);
 
         for (int i = 0;i < NUM_RECTANGLE;i++){
             Rectangle disc = new Rectangle(250 + 50*i, 50);
             disc.setFill(rectColors[i]);
             disc.setStroke(Color.BLACK);
-            panel1.getChildren().add(disc);
+            source.getChildren().add(disc);
         }
 
-        root.getChildren().add(panel1);
+        root.getChildren().add(source);
         root.getColumnConstraints().add(new ColumnConstraints(500));
-        GridPane.setColumnIndex(panel1, 0);
-        root.getChildren().add(panel2);
-        GridPane.setColumnIndex(panel2, 5);
-        root.getChildren().add(panel3);
-        GridPane.setColumnIndex(panel3, 10);
-
-        ComboBox<String> comboBox = new ComboBox<>();
-        comboBox.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
-        comboBox.setValue("5");
-        comboBox.setEditable(true);
-
-
-        return root;
+        GridPane.setColumnIndex(source, 0);
+        root.getChildren().add(destination);
+        GridPane.setColumnIndex(destination, 5);
+        root.getChildren().add(auxiliary);
+        GridPane.setColumnIndex(auxiliary, 10);
     }
+
+    private void InitializeGame(Stage mainStage){
+        mainStage = new Stage();
+        root =  new GridPane();
+        Scene scene = new Scene(root,1500,900);
+        mainStage.setScene(scene);
+        mainStage.setTitle("Tower of Hanoi");
+        mainStage.show();
+
+        InitializeGameContent();
+        InitializeTowers();
+
+    }
+
+
+
 
     private void undo() {
         if(!undoStack.isEmpty()){
@@ -123,13 +142,17 @@ public class Main extends Application {
         }
     }
 
-    private VBox returnTowerFromID(String id){
-
-        VBox Tower = (id == "panel1")? panel1: (id == "panel2")? panel2: (id == "panel3")? panel3:null;
-
-        return Tower;
-
-
+    public void solver(int discs, VBox Source, VBox Auxiliary, VBox Destination){
+        if (discs == 1){
+            Node node = Source.getChildren().remove(0);
+            Destination.getChildren().add(0,node);
+        }
+        else {
+            solver(discs - 1, Source, Destination, Auxiliary);
+            Node node = Source.getChildren().remove(0);
+            Destination.getChildren().add(0,node);
+            solver(discs - 1, Auxiliary, Source, Destination);
+        }
     }
 
     public void DragAndDropHandler(Node tower) {
