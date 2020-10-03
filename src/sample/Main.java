@@ -13,14 +13,13 @@ import javafx.scene.control.*;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.util.Stack;
 
 public class Main extends Application {
-    VBox source, destination, auxiliary;
+    VBox source, aux, dest;
     TextField NUM_MOVES_DESC;
     private Stack<Rectangle> undoRectStack, redoRectStack;
     private Stack<VBox> undoMoveStack, redoMoveStack;
@@ -57,7 +56,7 @@ public class Main extends Application {
 
 
         Button Solve = new Button("Solve");
-        Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source,destination,auxiliary));
+        Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source, aux, dest));
         //root.add(Solve,2,2);
 
         Button restart = new Button("Restart");
@@ -89,12 +88,13 @@ public class Main extends Application {
 
     private void restart(){
         source.getChildren().clear();
-        destination.getChildren().clear();
-        auxiliary.getChildren().clear();
+        aux.getChildren().clear();
+        dest.getChildren().clear();
         NUM_MOVES = 0;
 
         InitializeTowers();
         UpdateNumberOfMoves();
+        CheckIfGameEnds();
     }
 
     private void InitializeTowers(){
@@ -107,23 +107,23 @@ public class Main extends Application {
         source.setPadding(new Insets(0, 20, 10, 20));*/
         DragAndDropHandler(source);
 
-        destination = new VBox();
-        destination.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
-        destination.setAlignment(Pos.BOTTOM_CENTER);
-        destination.setPrefHeight(500);
-        destination.setPrefWidth(500);
+        aux = new VBox();
+        aux.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
+        aux.setAlignment(Pos.BOTTOM_CENTER);
+        aux.setPrefHeight(500);
+        aux.setPrefWidth(500);
         /*destination.setSpacing(1);
         destination.setPadding(new Insets(0, 20, 10, 20));*/
-        DragAndDropHandler(destination);
+        DragAndDropHandler(aux);
 
-        auxiliary = new VBox();
-        auxiliary.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
-        auxiliary.setAlignment(Pos.BOTTOM_CENTER);
-        auxiliary.setPrefHeight(500);
-        auxiliary.setPrefWidth(500);
+        dest = new VBox();
+        dest.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
+        dest.setAlignment(Pos.BOTTOM_CENTER);
+        dest.setPrefHeight(500);
+        dest.setPrefWidth(500);
         /*auxiliary.setSpacing(1);
         auxiliary.setPadding(new Insets(0, 20, 10, 20));*/
-        DragAndDropHandler(auxiliary);
+        DragAndDropHandler(dest);
 
         for (int i = 0;i < NUM_RECTANGLE;i++){
             Rectangle disc = new Rectangle(200 + 50*i, 50);
@@ -134,10 +134,10 @@ public class Main extends Application {
 
         root.getChildren().add(source);
         GridPane.setColumnIndex(source, 0);
-        root.getChildren().add(destination);
-        GridPane.setColumnIndex(destination, 1);
-        root.getChildren().add(auxiliary);
-        GridPane.setColumnIndex(auxiliary, 2);
+        root.getChildren().add(aux);
+        GridPane.setColumnIndex(aux, 1);
+        root.getChildren().add(dest);
+        GridPane.setColumnIndex(dest, 2);
     }
 
     private void InitializeGame(Stage mainStage){
@@ -236,6 +236,23 @@ public class Main extends Application {
         NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES);
     }
 
+    private void CheckIfGameEnds(){
+        if (dest.getChildren().size() == NUM_RECTANGLE){
+
+            if (NUM_MOVES + 1 ==  Math.pow(2,NUM_RECTANGLE)){
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Game is done." +
+                        "\nGame done in " + NUM_MOVES + " moves, which is the optimal number of moves." + "\nGame will now be restarted.");
+                alert.showAndWait();
+            }
+            else  {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Game is done." +
+                        "\nGame done in " + NUM_MOVES + " moves, which can be done in less moves." + "\nGame will now be restarted.");
+                alert.showAndWait();
+            }
+            restart();
+        }
+    }
+
     //https://stackoverflow.com/questions/40838376/javafx-combobox-valueproperty-addlistenernew-changelistenerstring-progres
     /*
     *If the number of total discs is changed from the DiscsNumChanger comboBox,
@@ -324,19 +341,24 @@ public class Main extends Application {
                     undoMoveStack.push((VBox) dragEvent.getGestureSource());
                     undoMoveStack.push((VBox)tower);
                     undoRectStack.push(disc);
+                    ((VBox)tower).getChildren().add(0,disc);
                     NUM_MOVES++;
                     UpdateNumberOfMoves();
-                    ((VBox)tower).getChildren().add(0,disc);
+
                     success = true;
                 }
                 dragEvent.setDropCompleted(success);
                 dragEvent.consume();
             }});
-        // When the dragging is completed, setOnDragDone will remove the moved disc from the source tower.
+        /*
+        * When the dragging is completed, setOnDragDone will remove the moved disc from the source tower.
+        * Then check if the move done will complete the game.
+        */
         tower.setOnDragDone(new EventHandler<DragEvent>() {
             public void handle(DragEvent dragEvent) {
                 if (dragEvent.getTransferMode() == TransferMode.MOVE) {
                     ((VBox)tower).getChildren().remove(0);
+                    CheckIfGameEnds();
                 }
                 dragEvent.consume();
             }});
