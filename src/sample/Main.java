@@ -80,6 +80,7 @@ public class Main extends Application {
         DiscsNumChanger = new ComboBox<String>();
         DiscsNumChanger.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
         DiscsNumChanger.setValue("5");
+        DiscsNumChanger.setPromptText("Number of discs: ");
         //comboBox.setEditable(true);
         root.add(DiscsNumChanger, 1, 4);
         UpdateNumberOfDiscs();
@@ -90,8 +91,10 @@ public class Main extends Application {
         source.getChildren().clear();
         destination.getChildren().clear();
         auxiliary.getChildren().clear();
+        NUM_MOVES = 0;
 
         InitializeTowers();
+        UpdateNumberOfMoves();
     }
 
     private void InitializeTowers(){
@@ -123,7 +126,7 @@ public class Main extends Application {
         DragAndDropHandler(auxiliary);
 
         for (int i = 0;i < NUM_RECTANGLE;i++){
-            Rectangle disc = new Rectangle(250 + 50*i, 50);
+            Rectangle disc = new Rectangle(200 + 50*i, 50);
             disc.setFill(rectColors[i]);
             disc.setStroke(Color.BLACK);
             source.getChildren().add(disc);
@@ -148,23 +151,30 @@ public class Main extends Application {
 
         InitializeGameContent();
         InitializeTowers();
-
     }
 
 
-
+    /*
+    * The method is the implementation when the user clicks the undo button.
+    * If there are moves to undo, the undoRectStack should be non-empty.
+    * Since undoRectStack and undoMoveStack are stacks, the pop() method will give the information of the last move.
+    * Using these information, undo() removes the latest moved disc from its sent tower and bring it to where it was previously in.
+    * redoRectStack and redoMoveStack will store the undid disc and the change in tower for the redo function.
+    * Since there is one less move, undo() updates the displayed number of moves done to the user.
+    *
+    * If there are no moves inside the undo stack, send an alert to the user.
+    */
     private void undo() {
         if(!undoRectStack.isEmpty()){
-            Node node = undoRectStack.pop();
-            redoRectStack.push((Rectangle) node);
-
+            Node disc = undoRectStack.pop();
             VBox StartTower = undoMoveStack.pop();
             VBox DestTower = undoMoveStack.pop();
 
+            ((VBox)StartTower).getChildren().remove(0);
+            ((VBox)DestTower).getChildren().add(0,disc);
+            redoRectStack.push((Rectangle) disc);
             redoMoveStack.push((VBox)DestTower);
             redoMoveStack.push((VBox)StartTower);
-            ((VBox)StartTower).getChildren().remove(0);
-            ((VBox)DestTower).getChildren().add(0,node);
             NUM_MOVES--;
             UpdateNumberOfMoves();
         }
@@ -174,6 +184,15 @@ public class Main extends Application {
         }
     }
 
+    /*
+    * The method is the implementation when the user clicks the undo button.
+     * Since redoRectStack and redoMoveStack are stacks, the pop() method will give the information of the last made undo.
+     * Using these information, redo() removes the latest moved disc from its sent tower and bring it to where it was previously in.
+     * undoRectStack and undoMoveStack will store the redid disc and the change in tower for the redo function.
+     * Since there is one less move, undo() updates the displayed number of moves done to the user.
+     *
+     * If there are no moves inside the undo stack, send an alert to the user.
+     */
     private void redo() {
         if(!redoMoveStack.isEmpty()){
             Node node = redoRectStack.pop();
@@ -218,6 +237,10 @@ public class Main extends Application {
     }
 
     //https://stackoverflow.com/questions/40838376/javafx-combobox-valueproperty-addlistenernew-changelistenerstring-progres
+    /*
+    *If the number of total discs is changed from the DiscsNumChanger comboBox,
+    * setup a new game with the new total number of discs.
+    */
     private void UpdateNumberOfDiscs(){
         DiscsNumChanger.valueProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -233,49 +256,67 @@ public class Main extends Application {
     }
 
     public void DragAndDropHandler(Node tower) {
+        /*
+        * setOnDragDetected handles the event when a user initiates a drag motion on the mouse/mouse-pad.
+        * If the clicked object is a disc inside one of the towers, it stores the information of that disc into the clipboard.
+        * */
         tower.setOnDragDetected(new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        final Object source = event.getSource();
-                        if (source instanceof VBox){
-                            ObservableList<Node> discs = ((VBox) source).getChildrenUnmodifiable();
-                            if (discs.size() != 0){
-                                Node topDisc = discs.get(0);
-                                Dragboard db = ((VBox) source).startDragAndDrop(TransferMode.MOVE);
-                                ClipboardContent content = new ClipboardContent();
-                                content.putString(String.valueOf(((Rectangle) topDisc).getWidth())); // put the width of the top disc in the content
-                                content.putHtml(String.valueOf(((Rectangle) topDisc).getFill())); // put the color of the top disc in the content (I'm using the HTML string)
-                                content.putUrl(String.valueOf(((Rectangle) topDisc).getId())); // put the id of the top disc in the content (I'm using the URL string)
-                                db.setContent(content); //set the clip board content in the dragboard object
-                                event.consume();
-                            }
-                        }
+            @Override
+            public void handle(MouseEvent event) {
+                final Object source = event.getSource();
+                if (source instanceof VBox){
+                    ObservableList<Node> discs = ((VBox) source).getChildrenUnmodifiable();
+                    if (discs.size() != 0){
+                        Node topDisc = discs.get(0);
+                        Dragboard db = ((VBox) source).startDragAndDrop(TransferMode.MOVE);
+                        ClipboardContent content = new ClipboardContent();
+                        content.putString(String.valueOf(((Rectangle) topDisc).getWidth()));
+                        content.putHtml(String.valueOf(((Rectangle) topDisc).getFill()));
+                        db.setContent(content);
+                        event.consume();
                     }
                 }
-        );
+            }});
 
-        tower.setOnDragOver(
-                new EventHandler<DragEvent>() {
-                    @Override
-                    public void handle(DragEvent dragEvent) {
-                        double sourceTopDisc = Double.parseDouble(dragEvent.getDragboard().getString());
-                        double destinationTopDisc = 999999;
-                        ObservableList<Node> discs = ((VBox)tower).getChildrenUnmodifiable(); // get list of the discs in the destination tower
-                        if (discs.size()!=0){ // if there is any
-                            destinationTopDisc = ((Rectangle)discs.get(0)).getWidth(); // assign the width of the top disc for validation
-                        }
-                        if (dragEvent.getGestureSource() != tower && sourceTopDisc<destinationTopDisc) { // if the destination is not the source and the top disc of source smaller of the destination top disc
-                            dragEvent.acceptTransferModes(TransferMode.MOVE); // accept transfer
-                        }
-                        dragEvent.consume();
-                    }
+        /*
+        * setOnDragOver handles the event where the user drags the clicked disc into another tower.
+        * startTowerTopDiscWidth is the width of the dragged disc.
+        * destTowerTopDiscWidth is the width of the top-most disc where the user is dragging towards.
+        * If the user has brought the disc into a different tower and the top-most disc of the new tower is wider than the dragged disc,
+        * set the transfer mode of the disc into the new tower.
+        *
+        * It is necessary to initialize destTowerTopDiscWidth to be a number larger than the smallest disc in the game for the initial game state where the other two towers are empty.
+        * Without initializing the value, the condition destTowerTopDiscWidth cannot be checked when dragging to an empty tower,
+        * as there are no width to get using destTowerTopDiscWidth = ((Rectangle)discs.get(0)).getWidth()
+        * */
+        tower.setOnDragOver(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent dragEvent) {
+                double startTowerTopDiscWidth = Double.parseDouble(dragEvent.getDragboard().getString());
+                double destTowerTopDiscWidth = 14051997;
+                ObservableList<Node> discs = ((VBox)tower).getChildrenUnmodifiable();
+                if (discs.size()!=0){
+                    destTowerTopDiscWidth = ((Rectangle)discs.get(0)).getWidth();
                 }
-        );
+                if (dragEvent.getGestureSource() != tower && startTowerTopDiscWidth<destTowerTopDiscWidth) {
+                    dragEvent.acceptTransferModes(TransferMode.MOVE);
+                }
+                dragEvent.consume();
+            }});
+
+        /*
+        * setOnDragDropped handles the event where the user drops a valid disc into a new tower.
+        * setOnDragDropped takes the required information of the transferred disc from the clipboard and
+        * sends the disc into the new tower.
+        * If this is successful, setOnDragDropped will save the information of the moving disc and the direction where it is moving)
+        * into the stack undoRectStack and undoMoveStack respectively.
+        * setOnDragDropped also increases the number of moves by one and updates this information to the user.
+        */
 
         tower.setOnDragDropped(new EventHandler<DragEvent>() { // if drag has dropped on the destination tower
             public void handle(DragEvent dragEvent) {
                 Dragboard db = dragEvent.getDragboard();
-                boolean success = false; // to inform successful drop
+                boolean success = false;
                 if (db.hasString() && dragEvent.getGestureSource() != tower) {
                     Rectangle disc = new Rectangle(Double.parseDouble(db.getString()), 50);
                     disc.setFill(Color.valueOf(db.getHtml()));
@@ -288,18 +329,16 @@ public class Main extends Application {
                     ((VBox)tower).getChildren().add(0,disc);
                     success = true;
                 }
-                dragEvent.setDropCompleted(success); // inform successful drop
+                dragEvent.setDropCompleted(success);
                 dragEvent.consume();
             }});
-
-        tower.setOnDragDone(new EventHandler<DragEvent>() { // when the drop is done remove the top disc from the source tower
+        // When the dragging is completed, setOnDragDone will remove the moved disc from the source tower.
+        tower.setOnDragDone(new EventHandler<DragEvent>() {
             public void handle(DragEvent dragEvent) {
                 if (dragEvent.getTransferMode() == TransferMode.MOVE) {
                     ((VBox)tower).getChildren().remove(0);
                 }
                 dragEvent.consume();
             }});
-
-
     }
 }
