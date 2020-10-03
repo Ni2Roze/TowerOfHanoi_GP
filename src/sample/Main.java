@@ -57,7 +57,7 @@ public class Main extends Application {
 
 
         Button Solve = new Button("Solve");
-        Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source,auxiliary,destination));
+        Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source,destination,auxiliary));
         //root.add(Solve,2,2);
 
         Button restart = new Button("Restart");
@@ -81,7 +81,7 @@ public class Main extends Application {
         DiscsNumChanger.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
         DiscsNumChanger.setValue("5");
         //comboBox.setEditable(true);
-        root.add(DiscsNumChanger, 4, 3);
+        root.add(DiscsNumChanger, 1, 4);
         UpdateNumberOfDiscs();
 
     }
@@ -96,30 +96,30 @@ public class Main extends Application {
 
     private void InitializeTowers(){
         source = new VBox();
-        source.setBackground(new Background(new BackgroundFill(Color.LIGHTGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+        source.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
         source.setAlignment(Pos.BOTTOM_CENTER);
-        source.setPrefHeight(980);
+        source.setPrefHeight(900);
         source.setPrefWidth(500);
-        source.setSpacing(1);
-        source.setPadding(new Insets(0, 20, 10, 20));
+        /*source.setSpacing(1);
+        source.setPadding(new Insets(0, 20, 10, 20));*/
         DragAndDropHandler(source);
 
         destination = new VBox();
-        destination.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        destination.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
         destination.setAlignment(Pos.BOTTOM_CENTER);
         destination.setPrefHeight(500);
         destination.setPrefWidth(500);
-        destination.setSpacing(1);
-        destination.setPadding(new Insets(0, 20, 10, 20));
+        /*destination.setSpacing(1);
+        destination.setPadding(new Insets(0, 20, 10, 20));*/
         DragAndDropHandler(destination);
 
         auxiliary = new VBox();
-        auxiliary.setBackground(new Background(new BackgroundFill(Color.LIGHTSALMON, CornerRadii.EMPTY, Insets.EMPTY)));
+        auxiliary.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
         auxiliary.setAlignment(Pos.BOTTOM_CENTER);
         auxiliary.setPrefHeight(500);
         auxiliary.setPrefWidth(500);
-        auxiliary.setSpacing(1);
-        auxiliary.setPadding(new Insets(0, 20, 10, 20));
+        /*auxiliary.setSpacing(1);
+        auxiliary.setPadding(new Insets(0, 20, 10, 20));*/
         DragAndDropHandler(auxiliary);
 
         for (int i = 0;i < NUM_RECTANGLE;i++){
@@ -130,12 +130,11 @@ public class Main extends Application {
         }
 
         root.getChildren().add(source);
-        root.getColumnConstraints().add(new ColumnConstraints(500));
         GridPane.setColumnIndex(source, 0);
         root.getChildren().add(destination);
-        GridPane.setColumnIndex(destination, 5);
+        GridPane.setColumnIndex(destination, 1);
         root.getChildren().add(auxiliary);
-        GridPane.setColumnIndex(auxiliary, 10);
+        GridPane.setColumnIndex(auxiliary, 2);
     }
 
     private void InitializeGame(Stage mainStage){
@@ -144,6 +143,7 @@ public class Main extends Application {
         Scene scene = new Scene(root,1500,900);
         mainStage.setScene(scene);
         mainStage.setTitle("Tower of Hanoi");
+        mainStage.setResizable(false);
         mainStage.show();
 
         InitializeGameContent();
