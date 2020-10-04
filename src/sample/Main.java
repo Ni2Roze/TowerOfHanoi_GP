@@ -14,23 +14,21 @@ import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
 import java.util.Stack;
 
 public class Main extends Application {
-    VBox source, aux, dest;
+    VBox source, aux, dest; //The three towers for the game
     TextField NUM_MOVES_DESC;
     private Stack<Rectangle> undoRectStack, redoRectStack;
     private Stack<VBox> undoMoveStack, redoMoveStack;
     private ComboBox<String> DiscsNumChanger;
-    private int NUM_RECTANGLE = 7;
-    private int NUM_MOVES = 0;
-
-
-
-    private final Color []rectColors = {Color.rgb(251,235,251), Color.rgb(242,195,243), Color.rgb(231,143,233), Color.rgb(219,88,222),
-            Color.rgb(173,34,176), Color.rgb(124,24,126), Color.rgb(82,16,84), Color.rgb(57,12,58)};
+    private int NUM_RECTANGLE = 5; //Starts the game with 5 discs
+    private int NUM_MOVES = 0; //Starts the game with 0 number of moves
+    private final Color []rectColors = {Color.rgb(255,0,0),Color.rgb(255,128,0),Color.rgb(255,255,0),
+            Color.rgb(128,255,0),Color.rgb(0,255,0),Color.rgb(0,255,128),
+            Color.rgb(0,255,255),Color.rgb(0,128,255),Color.rgb(0,0,255),Color.rgb(127,0,255)};
     private GridPane root;
 
     public static void main(String[] args) {
@@ -41,28 +39,23 @@ public class Main extends Application {
     public void start(Stage mainStage) throws Exception {
         InitializeGame(mainStage);
     }
+
     public void InitializeGameContent(){
         undoRectStack = new Stack<Rectangle>();
         undoMoveStack = new Stack<VBox>();
         Button btnUndo = new Button("Undo");
         btnUndo.setOnAction(actionEvent -> undo());
-        //root.add(btnUndo,1,1);
 
         redoRectStack = new Stack<Rectangle>();
         redoMoveStack = new Stack<VBox>();
         Button btnRedo = new Button("Redo");
         btnRedo.setOnAction(actionEvent -> redo());
-        //root.add(btnRedo,1,2);
-
 
         Button Solve = new Button("Solve");
         Solve.setOnAction(actionEvent -> solver(NUM_RECTANGLE,source, aux, dest));
-        //root.add(Solve,2,2);
 
         Button restart = new Button("Restart");
         restart.setOnAction(actionEvent -> restart());
-        //root.add(restart,3,2);
-
 
         HBox box = new HBox(5);
         box.getChildren().addAll(btnUndo, btnRedo,Solve,restart);
@@ -77,13 +70,11 @@ public class Main extends Application {
         root.add(box2, 1, 3);
 
         DiscsNumChanger = new ComboBox<String>();
-        DiscsNumChanger.getItems().addAll("3","4","5","6","7","8"); // number of discs between 3 - 8
+        DiscsNumChanger.getItems().addAll("3","4","5","6","7","8");
         DiscsNumChanger.setValue("5");
         DiscsNumChanger.setPromptText("Number of discs: ");
-        //comboBox.setEditable(true);
         root.add(DiscsNumChanger, 1, 4);
         UpdateNumberOfDiscs();
-
     }
 
     private void restart(){
@@ -99,30 +90,25 @@ public class Main extends Application {
 
     private void InitializeTowers(){
         source = new VBox();
-        source.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
+        source.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         source.setAlignment(Pos.BOTTOM_CENTER);
         source.setPrefHeight(900);
         source.setPrefWidth(500);
-        /*source.setSpacing(1);
-        source.setPadding(new Insets(0, 20, 10, 20));*/
+        source.setStyle("-fx-border-style: solid;" + "-fx-border-width: 5;" + "-fx-border-color: gray");
         DragAndDropHandler(source);
 
         aux = new VBox();
-        aux.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
+        aux.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         aux.setAlignment(Pos.BOTTOM_CENTER);
-        aux.setPrefHeight(500);
         aux.setPrefWidth(500);
-        /*destination.setSpacing(1);
-        destination.setPadding(new Insets(0, 20, 10, 20));*/
+        aux.setStyle("-fx-border-style: solid;" + "-fx-border-width: 5;" + "-fx-border-color: gray");
         DragAndDropHandler(aux);
 
         dest = new VBox();
-        dest.setBackground(new Background(new BackgroundFill(Color.SANDYBROWN, CornerRadii.EMPTY, Insets.EMPTY)));
+        dest.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
         dest.setAlignment(Pos.BOTTOM_CENTER);
-        dest.setPrefHeight(500);
         dest.setPrefWidth(500);
-        /*auxiliary.setSpacing(1);
-        auxiliary.setPadding(new Insets(0, 20, 10, 20));*/
+        dest.setStyle("-fx-border-style: solid;" + "-fx-border-width: 5;" + "-fx-border-color: gray");
         DragAndDropHandler(dest);
 
         for (int i = 0;i < NUM_RECTANGLE;i++){
@@ -143,27 +129,36 @@ public class Main extends Application {
     private void InitializeGame(Stage mainStage){
         mainStage = new Stage();
         root =  new GridPane();
-        Scene scene = new Scene(root,1500,900);
+        Scene scene = new Scene(root,1500,800);
         mainStage.setScene(scene);
         mainStage.setTitle("Tower of Hanoi");
         mainStage.setResizable(false);
         mainStage.show();
 
+        Label label = new Label ("Destination");
+        label.setFont(new Font("Arial", 30));
+        label.setTranslateX(175);
+        root.add(label,2,1);
+
+        Label label2 = new Label("Start");
+        label2.setFont(new Font("Arial", 30));
+        label2.setTranslateX(200);
+        root.add(label2, 0,1);
+
         InitializeGameContent();
         InitializeTowers();
     }
 
-
     /*
-    * The method is the implementation when the user clicks the undo button.
-    * If there are moves to undo, the undoRectStack should be non-empty.
-    * Since undoRectStack and undoMoveStack are stacks, the pop() method will give the information of the last move.
-    * Using these information, undo() removes the latest moved disc from its sent tower and bring it to where it was previously in.
-    * redoRectStack and redoMoveStack will store the undid disc and the change in tower for the redo function.
-    * Since there is one less move, undo() updates the displayed number of moves done to the user.
-    *
-    * If there are no moves inside the undo stack, send an alert to the user.
-    */
+     * The method is the implementation when the user clicks the undo button.
+     * If there are moves to undo, the undoRectStack should be non-empty.
+     * Since undoRectStack and undoMoveStack are stacks, the pop() method will give the information of the last move.
+     * Using these information, undo() removes the latest moved disc from its sent tower and bring it to where it was previously in.
+     * redoRectStack and redoMoveStack will store the undid disc and the change in tower for the redo function.
+     * Since there is one less move, undo() updates the displayed number of moves done to the user.
+     *
+     * If there are no moves inside the undo stack, send an alert to the user.
+     */
     private void undo() {
         if(!undoRectStack.isEmpty()){
             Node disc = undoRectStack.pop();
@@ -185,7 +180,7 @@ public class Main extends Application {
     }
 
     /*
-    * The method is the implementation when the user clicks the undo button.
+     * The method is the implementation when the user clicks the undo button.
      * Since redoRectStack and redoMoveStack are stacks, the pop() method will give the information of the last made undo.
      * Using these information, redo() removes the latest moved disc from its sent tower and bring it to where it was previously in.
      * undoRectStack and undoMoveStack will store the redid disc and the change in tower for the redo function.
@@ -207,7 +202,6 @@ public class Main extends Application {
             ((VBox)redoDestTower).getChildren().add(0,node);
             NUM_MOVES++;
             UpdateNumberOfMoves();
-
         }
         else {
             Alert alert = new Alert(Alert.AlertType.WARNING, "No moves to redo.");
@@ -228,17 +222,25 @@ public class Main extends Application {
             Destination.getChildren().add(0,node);
             solver(discs - 1, Auxiliary, Source, Destination);
         }
+        CheckIfGameEnds2();
     }
 
+    private void CheckIfGameEnds2(){
+        if (dest.getChildren().size() == NUM_RECTANGLE){
+            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Game is done." +
+                    "\nGame done in " + (int)(Math.pow(2,NUM_RECTANGLE)-1) + " moves, which is the optimal number of moves." + "\nGame will now be restarted.");
+            alert.showAndWait();
+            restart();
+        }
+    }
 
     //https://stackoverflow.com/questions/44413649/javafx-how-to-update-text-of-dynimically-created-textfields-inside-gridpane
     public void UpdateNumberOfMoves(){
-        NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES );
+        NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES);
     }
 
     private void CheckIfGameEnds(){
         if (dest.getChildren().size() == NUM_RECTANGLE){
-
             if (NUM_MOVES + 1 ==  Math.pow(2,NUM_RECTANGLE)){
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "Game is done." +
                         "\nGame done in " + NUM_MOVES + " moves, which is the optimal number of moves." + "\nGame will now be restarted.");
@@ -252,12 +254,11 @@ public class Main extends Application {
             restart();
         }
     }
-
     //https://stackoverflow.com/questions/40838376/javafx-combobox-valueproperty-addlistenernew-changelistenerstring-progres
     /*
-    *If the number of total discs is changed from the DiscsNumChanger comboBox,
-    * setup a new game with the new total number of discs.
-    */
+     *If the number of total discs is changed from the DiscsNumChanger comboBox,
+     * setup a new game with the new total number of discs.
+     */
     private void UpdateNumberOfDiscs(){
         DiscsNumChanger.valueProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -274,9 +275,9 @@ public class Main extends Application {
 
     public void DragAndDropHandler(Node tower) {
         /*
-        * setOnDragDetected handles the event when a user initiates a drag motion on the mouse/mouse-pad.
-        * If the clicked object is a disc inside one of the towers, it stores the information of that disc into the clipboard.
-        * */
+         * setOnDragDetected handles the event when a user initiates a drag motion on the mouse/mouse-pad.
+         * If the clicked object is a disc inside one of the towers, it stores the information of that disc into the clipboard.
+         * */
         tower.setOnDragDetected(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -296,16 +297,16 @@ public class Main extends Application {
             }});
 
         /*
-        * setOnDragOver handles the event where the user drags the clicked disc into another tower.
-        * startTowerTopDiscWidth is the width of the dragged disc.
-        * destTowerTopDiscWidth is the width of the top-most disc where the user is dragging towards.
-        * If the user has brought the disc into a different tower and the top-most disc of the new tower is wider than the dragged disc,
-        * set the transfer mode of the disc into the new tower.
-        *
-        * It is necessary to initialize destTowerTopDiscWidth to be a number larger than the smallest disc in the game for the initial game state where the other two towers are empty.
-        * Without initializing the value, the condition destTowerTopDiscWidth cannot be checked when dragging to an empty tower,
-        * as there are no width to get using destTowerTopDiscWidth = ((Rectangle)discs.get(0)).getWidth()
-        * */
+         * setOnDragOver handles the event where the user drags the clicked disc into another tower.
+         * startTowerTopDiscWidth is the width of the dragged disc.
+         * destTowerTopDiscWidth is the width of the top-most disc where the user is dragging towards.
+         * If the user has brought the disc into a different tower and the top-most disc of the new tower is wider than the dragged disc,
+         * set the transfer mode of the disc into the new tower.
+         *
+         * It is necessary to initialize destTowerTopDiscWidth to be a number larger than the smallest disc in the game for the initial game state where the other two towers are empty.
+         * Without initializing the value, the condition destTowerTopDiscWidth cannot be checked when dragging to an empty tower,
+         * as there are no width to get using destTowerTopDiscWidth = ((Rectangle)discs.get(0)).getWidth()
+         * */
         tower.setOnDragOver(new EventHandler<DragEvent>() {
             @Override
             public void handle(DragEvent dragEvent) {
@@ -322,15 +323,14 @@ public class Main extends Application {
             }});
 
         /*
-        * setOnDragDropped handles the event where the user drops a valid disc into a new tower.
-        * setOnDragDropped takes the required information of the transferred disc from the clipboard and
-        * sends the disc into the new tower.
-        * If this is successful, setOnDragDropped will save the information of the moving disc and the direction where it is moving)
-        * into the stack undoRectStack and undoMoveStack respectively.
-        * setOnDragDropped also increases the number of moves by one and updates this information to the user.
-        */
-
-        tower.setOnDragDropped(new EventHandler<DragEvent>() {
+         * setOnDragDropped handles the event where the user drops a valid disc into a new tower.
+         * setOnDragDropped takes the required information of the transferred disc from the clipboard and
+         * sends the disc into the new tower.
+         * If this is successful, setOnDragDropped will save the information of the moving disc and the direction where it is moving)
+         * into the stack undoRectStack and undoMoveStack respectively.
+         * setOnDragDropped also increases the number of moves by one and updates this information to the user.
+         */
+        tower.setOnDragDropped(new EventHandler<DragEvent>() { // if drag has dropped on the destination tower
             public void handle(DragEvent dragEvent) {
                 Dragboard db = dragEvent.getDragboard();
                 boolean success = false;
@@ -350,10 +350,11 @@ public class Main extends Application {
                 dragEvent.setDropCompleted(success);
                 dragEvent.consume();
             }});
+
         /*
-        * When the dragging is completed, setOnDragDone will remove the moved disc from the source tower.
-        * Then check if the move done will complete the game.
-        */
+         * When the dragging is completed, setOnDragDone will remove the moved disc from the source tower.
+         * Then check if the move done will complete the game.
+         */
         tower.setOnDragDone(new EventHandler<DragEvent>() {
             public void handle(DragEvent dragEvent) {
                 if (dragEvent.getTransferMode() == TransferMode.MOVE) {
@@ -362,6 +363,5 @@ public class Main extends Application {
                 }
                 dragEvent.consume();
             }});
-
     }
 }
