@@ -233,7 +233,7 @@ public class Main extends Application {
 
     //https://stackoverflow.com/questions/44413649/javafx-how-to-update-text-of-dynimically-created-textfields-inside-gridpane
     public void UpdateNumberOfMoves(){
-        NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES);
+        NUM_MOVES_DESC.setText("Moves No.: " + NUM_MOVES );
     }
 
     private void CheckIfGameEnds(){
@@ -330,7 +330,7 @@ public class Main extends Application {
         * setOnDragDropped also increases the number of moves by one and updates this information to the user.
         */
 
-        tower.setOnDragDropped(new EventHandler<DragEvent>() { // if drag has dropped on the destination tower
+        tower.setOnDragDropped(new EventHandler<DragEvent>() {
             public void handle(DragEvent dragEvent) {
                 Dragboard db = dragEvent.getDragboard();
                 boolean success = false;
@@ -362,5 +362,6 @@ public class Main extends Application {
                 }
                 dragEvent.consume();
             }});
+
     }
 }
